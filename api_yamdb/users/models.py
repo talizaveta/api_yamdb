@@ -9,13 +9,14 @@ ADMIN = 'Admin'
 
 
 class User(AbstractUser):
+    """Модель для создания пользователя."""
     ROLE_CHOICES = [
         (USER, USER),
         (MODERATOR, MODERATOR),
         (ADMIN, ADMIN),
     ]
     username = models.CharField(
-        'Имя пользователя',
+        'Имя профиля',
         max_length=150,
         blank=False,
         null=False,
@@ -40,6 +41,7 @@ class User(AbstractUser):
         blank=True
     )
     bio = models.TextField(
+        'О себе',
         blank=True
     )
     role = models.CharField(

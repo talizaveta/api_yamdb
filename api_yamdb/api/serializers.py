@@ -1,5 +1,7 @@
-from reviews.models import Category, Comment, Genre, Review, Title
 from rest_framework import serializers
+
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -63,3 +65,33 @@ class CommentSerializer(serializers.ModelSerializer):
             'pub_date',
         )
         model = Comment
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализация данных модели User."""
+    class Meta:
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role',
+        )
+        model = User
+
+
+class OwnerSerializer(serializers.ModelSerializer):
+    """Сериализация данных модели User для своей учётной записи."""
+    role = serializers.CharField(read_only=True)
+
+    class Meta:
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role',
+        )
+        model = User

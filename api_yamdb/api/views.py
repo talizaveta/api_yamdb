@@ -1,11 +1,18 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
-from reviews.models import Comment, Review, Title
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from .permissions import ReviewAndCommentPermission
-from .serializers import (CommentSerializer, ReviewSerializer,)
+from reviews.models import Comment, Review, Title
+from users.models import User
+from .permissions import AdminOnly, ReviewAndCommentPermission
+from .serializers import (
+    CommentSerializer, OwnerSerializer,
+    ReviewSerializer, UserSerializer)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -44,5 +51,24 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class UsersViewSet():
-    pass
+class UsersViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated, AdminOnly,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (SearchFilter,)
+    search_fields = ('username',)
+
+    @action(
+        methods=['GET', 'PATCH'], detail=False,
+        url_path='me', permission_classes=(IsAuthenticated,))
+    def get_patch_owner_info(self, request):
+        user = get_object_or_404(User, username=self.request.user)
+        if request.method == 'GET':
+            serializer = OwnerSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == 'PATCH':
+            serializer = OwnerSerializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
