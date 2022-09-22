@@ -95,3 +95,19 @@ class OwnerSerializer(serializers.ModelSerializer):
             'role',
         )
         model = User
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('email', 'username')
+        model = User
+
+
+class GetTokenSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')

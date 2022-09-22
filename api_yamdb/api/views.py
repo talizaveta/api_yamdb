@@ -1,3 +1,6 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -6,13 +9,16 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import Comment, Review, Title
 from users.models import User
 from .permissions import AdminOnly, ReviewAndCommentPermission
 from .serializers import (
-    CommentSerializer, OwnerSerializer,
-    ReviewSerializer, UserSerializer)
+    CommentSerializer, GetTokenSerializer, OwnerSerializer,
+    ReviewSerializer, SignUpSerializer, UserSerializer)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -54,8 +60,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated, AdminOnly,)
-    pagination_class = LimitOffsetPagination
+    permission_classes = (AdminOnly,)
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
 
@@ -72,3 +77,42 @@ class UsersViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SignUpView(APIView):
+     def post(self, request):
+         serializer = SignUpSerializer(data=request.data)
+         serializer.is_valid(raise_exception=True)
+         try:
+             user, create = User.objects.get_or_create(
+                 **serializer.validated_data
+             )
+         except IntegrityError:
+             return Response('Имя пользователя или почта уже существуют!',
+                             status=status.HTTP_400_BAD_REQUEST)
+         confirmation_code = default_token_generator.make_token(user)
+         user.confirmation_code = confirmation_code
+         user.save()
+         send_mail(
+             subject='Yamdb confirmation code',
+             message=f'Ваш код подтверждения: {confirmation_code}',
+             from_email=DEFAULT_FROM_EMAIL,
+             recipient_list=[user.email],
+         )
+         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetTokenView(APIView):
+    def post(self, request):
+        serializer = GetTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User,
+            username=serializer.validated_data.get('username')
+        )
+        if default_token_generator.check_token(
+                user, serializer.validated_data.get('confirmation_code')
+        ):
+            token = AccessToken.for_user(user)
+            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
