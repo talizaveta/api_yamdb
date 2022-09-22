@@ -1,7 +1,8 @@
 from django.utils import timezone
 
 from django.db.models import Avg
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, filters
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import ListCreateDestroyViewSet
@@ -19,6 +20,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     ).order_by('name')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly, )
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name', 'year', 'genre', 'category')
 
     def perform_create(self, serializer):
         if self.kwargs.get('year') > timezone.now().year:
@@ -32,6 +35,8 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly, )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name', )
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
@@ -40,3 +45,5 @@ class GenreViewSet(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly, )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name', )
