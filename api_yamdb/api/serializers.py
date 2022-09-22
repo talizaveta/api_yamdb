@@ -7,9 +7,28 @@ from users.models import User
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализация данных модели Title."""
 
+    rating = serializers.DecimalField(
+        read_only=True,
+        max_digits=2,
+        decimal_places=1
+    )
+    genre = serializers.SlugRelatedField(
+        slug_field='slug', many=True, queryset=Genre.objects.all()
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug', queryset=Category.objects.all()
+    )
+
     class Meta:
         model = Title
-        fields = ('name', 'description', 'year', 'rating', 'genre', 'category',)
+        fields = (
+            'name',
+            'description',
+            'year',
+            'rating',
+            'genre',
+            'category',
+        )
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -69,6 +88,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализация данных модели User."""
+
     class Meta:
         fields = (
             'username',
@@ -83,6 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class OwnerSerializer(serializers.ModelSerializer):
     """Сериализация данных модели User для своей учётной записи."""
+
     role = serializers.CharField(read_only=True)
 
     class Meta:
@@ -98,6 +119,7 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """Сериализация данных при регистрации."""
 
     class Meta:
         fields = ('email', 'username')
@@ -105,6 +127,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class GetTokenSerializer(serializers.ModelSerializer):
+    """Сериализация данных при получении токена."""
+
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 

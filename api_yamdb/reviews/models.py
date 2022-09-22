@@ -64,16 +64,11 @@ class Title(models.Model):
         blank=True,
         help_text='Введите описание произведения'
     )
-    year = models.IntegerField(verbose_name='Дата выхода'),
-    rating = models.IntegerField(
-        verbose_name='Рейтинг',
-        null=True,
-        default=None
-    ),
+    year = models.IntegerField(verbose_name='Год выхода'),
     genre = models.ManyToManyField(
         Genre,
-        on_delete=models.SET_NULL,
         null=True,
+        on_delete=models.SET_NULL,
         related_name='titles',
         verbose_name='Жанр'
     ),
