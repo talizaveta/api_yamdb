@@ -1,6 +1,6 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from users.models import User
-from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class Category(models.Model):
@@ -86,10 +86,6 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ['name']
-
-class Title(models.Model):
-    def __str__(self):
-        return self.name
 
 
 class Review(models.Model):

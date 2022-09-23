@@ -1,7 +1,6 @@
 from rest_framework import permissions
 
 
-<<<<<<< HEAD
 class ReviewAndCommentPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         return (
@@ -20,7 +19,19 @@ class ReviewAndCommentPermission(permissions.BasePermission):
                     or request.user.role == 'moderator'
                     or obj.author == request.user)
         return False
-=======
+
+
+class AdminOnly(permissions.BasePermission):
+    """Пользователь является администратором или суперпользователем."""
+    def has_permission(self, request, view):
+        return (request.user.is_admin
+                or request.user.is_superuser)
+
+    def has_object_permission(self, request, view, obj):
+        return (request.user.is_admin
+                or request.user.is_superuser)
+
+
 class IsAdminOrReadOnly(permissions.BasePermission):
     """Пользователь является администратором при редактировании."""
 
@@ -31,4 +42,3 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (request.methods in permissions.SAFE_METHODS
                 or request.user.is_admin or request.user.is_superuser)
->>>>>>> categories/genres/titles
