@@ -1,33 +1,26 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from .validators import validate_username
-
-USER = 'User'
-MODERATOR = 'Moderator'
-ADMIN = 'Admin'
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
 
 
 class User(AbstractUser):
     """Модель для создания пользователя."""
-    ROLE_CHOICES = [
-        (USER, USER),
-        (MODERATOR, MODERATOR),
-        (ADMIN, ADMIN),
+    ROLE = [
+        (USER, 'user'),
+        (ADMIN, 'admin'),
+        (MODERATOR, 'moderator'),
     ]
     username = models.CharField(
         'Имя профиля',
         max_length=150,
-        blank=False,
-        null=False,
-        unique=True,
-        validators=[validate_username]
+        unique=True
     )
     email = models.EmailField(
         'Почта',
         max_length=254,
-        blank=False,
-        null=False,
         unique=True
     )
     first_name = models.CharField(
@@ -46,8 +39,8 @@ class User(AbstractUser):
     )
     role = models.CharField(
         'Роль',
-        max_length=max(len(role[0]) for role in ROLE_CHOICES),
-        choices=ROLE_CHOICES,
+        max_length=10,
+        choices=ROLE,
         default=USER
     )
     confirmation_code = models.CharField(
@@ -55,6 +48,9 @@ class User(AbstractUser):
         max_length=100,
         blank=True
     )
+
+    class Meta:
+        ordering = ['id']
 
     @property
     def is_user(self):
@@ -66,11 +62,9 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == ADMIN
-
-    class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        return any(
+            [self.role == ADMIN, self.is_superuser, self.is_staff]
+        )
 
     def __str__(self):
         return self.username
