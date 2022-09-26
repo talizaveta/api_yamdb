@@ -5,12 +5,13 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ParseError
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Categories, Comment, Genres, Review, Title
 from users.models import User
 
@@ -23,7 +24,7 @@ from api.serializers import (CategoriesSerializer, CommentSerializer,
                              ReviewSerializer, SignUpSerializer,
                              TitleSerializer, UserSerializer)
 
-from .filtres import TitleFilter
+from api.filtres import TitleFilter
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -67,6 +68,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
+    """Обработка методов GET, POST, PATCH, DELETE  для рецензий."""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (ReviewAndCommentPermission,)
@@ -88,6 +90,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Обработка методов GET, POST, PATCH, DELETE  для комментариев."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (ReviewAndCommentPermission,)
@@ -103,7 +106,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    """Обработка методов GET, POST, PUT, PATCH, DELETE для пользователей."""
+    """Обработка методов GET, POST, PATCH, DELETE для пользователей."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -127,23 +130,24 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.data.get('email')
-    user = get_object_or_404(User, email=email)
-    default_token_generator.check_token(
-        user, serializer.data.get('confirmation_code'))
-    token = RefreshToken.for_user(user)
-    return Response(
-        {'token': (token.access_token)},
-        status=status.HTTP_200_OK
+    confirmation_code = serializer.validated_data.get('confirmation_code')
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data.get('username')
     )
+
+    if confirmation_code == user.confirmation_code:
+        token = RefreshToken.for_user(user).access_token
+        return Response({'token': str(token)},
+                        status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
 def signup(request):
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

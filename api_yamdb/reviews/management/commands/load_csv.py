@@ -1,10 +1,11 @@
 import csv
 import os
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from api_yamdb import settings
-from reviews.models import Categories, Genres, Title, GenreTitle, Review, Comment
+from reviews.models import (
+    Categories, Genres, Title, GenreTitle, Review, Comment)
 from users.models import User
 
 path = f'{settings.BASE_DIR}/static/data/'
@@ -31,7 +32,9 @@ class Command(BaseCommand):
 
                 if file_name == 'titles':
                     for row in reader:
-                        category = Categories.objects.get(pk=row.pop('category'))
+                        category = Categories.objects.get(
+                            pk=row.pop('category')
+                        )
                         obj = model(
                             category=category,
                             **row
