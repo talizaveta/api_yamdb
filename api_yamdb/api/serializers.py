@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from rest_framework import serializers
@@ -155,19 +156,16 @@ class SignUpSerializer(serializers.Serializer):
         ]
     )
 
-    def validate(self, data):
-        email = data['email']
-        username = data['username']
-        if data['username'] == 'me':
+    def validate_username(self, value):
+        if value == 'me':
             raise serializers.ValidationError(
-                {'Выберите другой username'})
-        if User.objects.filter(email=email).exists():
+                'Нельзя использовать <me> в качестве никнейма'
+            )
+        elif re.search(r'^[\w.@+-]+$', value) is None:
             raise serializers.ValidationError(
-                {'Уже зарегестрирован'})
-        if User.objects.filter(username=username).exists():
-            raise serializers.ValidationError(
-                {'Уже зарегестрирован'})
-        return data
+                'Использованы недопустимые символы'
+            )
+        return value
 
 
 class GetTokenSerializer(serializers.Serializer):
