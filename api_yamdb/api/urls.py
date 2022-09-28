@@ -4,6 +4,10 @@ from rest_framework import routers
 from .views import (CategoryViewSet, CommentViewSet, GenreViewSet,
                     ReviewsViewSet, TitleViewSet, UsersViewSet, get_token,
                     signup)
+from rest_framework.authtoken import views
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
+
 
 v1_router = routers.DefaultRouter()
 
@@ -28,5 +32,16 @@ v1_router.register(
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
     path('v1/auth/token/', get_token),
-    path('v1/auth/signup/', signup)
+    path('v1/auth/signup/', signup),
+    path(
+        'api/token/',
+        TokenObtainPairView.as_view(),
+        name='token_obtain'
+    ),
+    path(
+        'api/token/refresh/',
+        TokenRefreshView.as_view(),
+        name='token_refresh'
+    ),
+    path('api-token-auth/', views.obtain_auth_token),
 ]

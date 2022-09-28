@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from django.shortcuts import get_object_or_404
 
 from reviews.models import Categories, Comment, Genres, Review, Title
@@ -23,7 +24,7 @@ class GenresSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class TitleWriteSerializer(serializers.ModelSerializer):
     """Сериализация данных модели Title."""
 
     category = serializers.SlugRelatedField(
@@ -70,15 +71,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=serializers.CurrentUserDefault()
     )
 
-    class Meta:
-        model = Review
-        fields = '__all__'
-        extra_kwargs = {'title': {'required': False}}
-
     def validate(self, data):
-        title = self.context.get('title')
+        title = self.context['request'].parser_context['kwargs']['title_id']
         request = self.context.get('request')
         if (
             request.method != 'PATCH'
@@ -88,6 +85,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError('Вы уже оставляли рецензию.')
         return data
+
+    class Meta:
+        model = Review
+        fields = '__all__'
+        extra_kwargs = {'title': {'required': False}}
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -141,8 +143,17 @@ class OwnerSerializer(serializers.ModelSerializer):
 class SignUpSerializer(serializers.Serializer):
     """Сериализация данных при регистрации."""
 
-    email = serializers.EmailField(required=True)
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
+    )
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ]
+    )
 
     def validate(self, data):
         email = data['email']

@@ -6,7 +6,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ParseError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -22,13 +21,13 @@ from api.serializers import (CategoriesSerializer, CommentSerializer,
                              GenresSerializer, GetTokenSerializer,
                              OwnerSerializer, ReadOnlyTitleSerializer,
                              ReviewSerializer, SignUpSerializer,
-                             TitleSerializer, UserSerializer)
+                             TitleWriteSerializer, UserSerializer)
 
 from api.filtres import TitleFilter
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    """Обработка методов GET, POST, PUT, PATCH, DELETE  для произведений."""
+    """ВьюСет для Произведений"""
 
     queryset = Title.objects.all().annotate(Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly,)
@@ -39,12 +38,12 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
-            return TitleSerializer
+            return TitleWriteSerializer
         return ReadOnlyTitleSerializer
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
-    """Обработка методов GET, POST, DELETE для категорий."""
+    """ВьюСет для категорий произведений."""
 
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
@@ -56,7 +55,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
-    """Обработка методов GET, POST, DELETE для жанров."""
+    """ВьюСет для жанров произведений."""
 
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
@@ -68,7 +67,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
-    """Обработка методов GET, POST, PATCH, DELETE  для рецензий."""
+    """ВьюСет для отзывов."""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (ReviewAndCommentPermission,)
@@ -79,18 +78,12 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, pk=title_id)
-        if Review.objects.filter(
-                title=title_id,
-                author=self.request.user
-        ).exists():
-            raise ParseError('Отзыв уже создан!')
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         serializer.save(title=title, author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """Обработка методов GET, POST, PATCH, DELETE  для комментариев."""
+    """ВьюСет для комментариев."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (ReviewAndCommentPermission,)
@@ -106,7 +99,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    """Обработка методов GET, POST, PATCH, DELETE для пользователей."""
+    """ВьюСет для управления пользователями."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer

@@ -8,5 +8,3 @@ class ListCreateDestroyViewSet(
     viewsets.GenericViewSet,
 ):
     """Вьюсет для обработки методов GET, POST, DELETE"""
-
-    pass
