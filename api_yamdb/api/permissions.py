@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from users.models import ADMIN, MODERATOR
+
 
 class AdminOnly(permissions.BasePermission):
     """Пользователь является администратором или суперпользователем."""
@@ -12,8 +14,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return request.method in permissions.SAFE_METHODS or (
-            request.user.is_authenticated
-            and (request.user.is_admin or request.user.is_superuser)
+            request.user.is_authenticated and request.user.is_admin
         )
 
 
@@ -31,7 +32,7 @@ class ReviewAndCommentPermission(permissions.BasePermission):
             return (request.user
                     and request.user.is_authenticated)
         if request.method == 'PATCH' or request.method == 'DELETE':
-            return (request.user.role == 'admin'
-                    or request.user.role == 'moderator'
+            return (request.user.role == ADMIN
+                    or request.user.role == MODERATOR
                     or obj.author == request.user)
         return False
